@@ -1,0 +1,77 @@
+#include <iostream>
+#include <unordered_map>
+#include <stdexcept>
+
+class AssociationError : public std::exception {
+public:
+    const char *what() const noexcept override {
+        return "Association not found";
+    }
+};
+
+class AssociatedEntities {
+private:
+    std::unordered_map<std::string, std::string> associations;
+
+public:
+    void addAssociation(const std::string &entity1, const std::string &entity2) {
+        associations[entity1] = entity2;
+    }
+
+    std::string operator[](const std::string &key) const {
+        auto it = associations.find(key);
+        if (it != associations.end()) {
+            return it->second;
+        } else {
+            throw AssociationError();
+        }
+    }
+
+    std::string operator()(const std::string &key) const {
+        return (*this)[key];
+    }
+
+    friend std::ostream &operator<<(std::ostream &os, const AssociatedEntities &obj) {
+        for (const auto &pair : obj.associations) {
+            os << pair.first << " -> " << pair.second << std::endl;
+        }
+        return os;
+    }
+
+    friend std::istream &operator>>(std::istream &is, AssociatedEntities &obj) {
+        std::string entity1, entity2;
+        while (is >> entity1 >> entity2) {
+            obj.addAssociation(entity1, entity2);
+        }
+        return is;
+    }
+};
+
+int main() {
+    AssociatedEntities associations;
+
+    // Додавання асоціацій
+    associations.addAssociation("john.doe@example.com", "+1234567890");
+    associations.addAssociation("alice.smith@example.com", "+9876543210");
+
+    try {
+        // Звертання через індексацію
+        std::cout << "Email to Phone: " << associations["john.doe@example.com"] << std::endl;
+        std::cout << "Email to Phone: " << associations["unknown@example.com"] << std::endl; // Генерує AssociationError
+    } catch (const AssociationError &e) {
+        std::cerr << "AssociationError: " << e.what() << std::endl;
+    }
+
+    try {
+        // Звертання через виклик функції
+        std::cout << "Email to Phone: " << associations("alice.smith@example.com") << std::endl;
+        std::cout << "Email to Phone: " << associations("unknown@example.com") << std::endl; // Генерує AssociationError
+    } catch (const AssociationError &e) {
+        std::cerr << "AssociationError: " << e.what() << std::endl;
+    }
+
+    // Виведення асоціативних сутностей
+    std::cout << "Associations:" << std::endl << associations;
+
+    return 0;
+}

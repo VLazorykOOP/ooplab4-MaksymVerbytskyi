@@ -1,0 +1,123 @@
+#include <iostream>
+
+class VectorShort {
+private:
+    short *data;    // вказівник на масив
+    size_t size;     // розмір вектора
+    mutable int codeError;   // код помилки
+
+public:
+    // Конструктори
+    VectorShort() : data(new short[1]()), size(1), codeError(0) {}
+
+    VectorShort(size_t s) : data(new short[s]()), size(s), codeError(0) {}
+
+    VectorShort(size_t s, short value) : data(new short[s]()), size(s), codeError(0) {
+        for (size_t i = 0; i < size; ++i) {
+            data[i] = value;
+        }
+    }
+
+    VectorShort(const VectorShort& other) : data(new short[other.size]()), size(other.size), codeError(0) {
+        for (size_t i = 0; i < size; ++i) {
+            data[i] = other.data[i];
+        }
+    }
+
+    // Деструктор
+    ~VectorShort() {
+        delete[] data;
+    }
+
+    // Перевантаження операторів
+    VectorShort& operator=(const VectorShort& other) {
+        if (this != &other) {
+            delete[] data;
+            size = other.size;
+            data = new short[size]();
+            for (size_t i = 0; i < size; ++i) {
+                data[i] = other.data[i];
+            }
+        }
+        return *this;
+    }
+
+    VectorShort& operator+=(const VectorShort& other) {
+        for (size_t i = 0; i < size; ++i) {
+            data[i] += other.data[i];
+        }
+        return *this;
+    }
+
+    // інші операції аналогічно
+
+    // Функція для перевірки розміру вектору
+    bool isSizeValid() const {
+        return size != 0;
+    }
+
+    // Функція-оператор для порівняння
+    bool operator>(const VectorShort& other) const {
+        if (size != other.size) {
+            codeError = 1;  // код помилки: розміри не співпадають
+            return false;
+        }
+
+        for (size_t i = 0; i < size; ++i) {
+            if (data[i] <= other.data[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Функція для індексації
+    short& operator[](size_t index) {
+        if (index < size) {
+            return data[index];
+        } else {
+            codeError = 2;  // код помилки: індекс за межами масиву
+            return data[size - 1];  // повертаємо останній елемент
+        }
+    }
+
+    // Дружня функція для виведення вектора в потік
+    friend std::ostream& operator<<(std::ostream& os, const VectorShort& vec);
+};
+
+// Дружня функція для виведення вектора в потік
+std::ostream& operator<<(std::ostream& os, const VectorShort& vec) {
+    for (size_t i = 0; i < vec.size; ++i) {
+        os << vec.data[i] << " ";
+    }
+    return os;
+}
+
+int main() {
+    VectorShort v1(5, 2);
+    VectorShort v2(5, 3);
+
+    std::cout << "Vector 1: " << v1 << std::endl;
+    std::cout << "Vector 2: " << v2 << std::endl;
+
+    v1 += v2;
+
+    std::cout << "After += operation: " << v1 << std::endl;
+
+    if (v1 > v2) {
+        std::cout << "Vector 1 is greater than Vector 2." << std::endl;
+    } else {
+        std::cout << "Vector 1 is not greater than Vector 2." << std::endl;
+    }
+
+    // Приклад роботи із змінною codeError
+    if (!v1.isSizeValid()) {
+        std::cerr << "Error: Vector size is zero." << std::endl;
+    }
+
+    // Приклад використання індексації
+    std::cout << "Element at index 2 in Vector 1: " << v1[2] << std::endl;
+
+    return 0;
+}
